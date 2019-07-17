@@ -1,0 +1,75 @@
+##################################################################################################
+# Sleep service
+##################################################################################################
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sleep
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sleep
+  labels:
+    app: sleep
+spec:
+  ports:
+  - port: 80
+    name: http
+  selector:
+    app: sleep
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sleep
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sleep
+    spec:
+      serviceAccountName: sleep
+      containers:
+      - name: sleep
+        image: pstauffer/curl
+        command: ["/bin/sleep", "3650d"]
+        imagePullPolicy: IfNotPresent
+---
+
+##################################################################################################
+# httpbin service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+  labels:
+    app: httpbin
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 80
+  selector:
+    app: httpbin
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: httpbin
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: httpbin
+        version: v1
+    spec:
+      containers:
+      - image: docker.io/kennethreitz/httpbin
+        imagePullPolicy: IfNotPresent
+        name: httpbin
+        ports:
+        - containerPort: 80

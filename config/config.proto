@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// config for auth adapter
+package adapter.userauth.config;
+
+import "gogoproto/gogo.proto";
+
+option go_package="config";
+
+// config for auth adapter
+message Params {
+  // private token
+  string token = 1;
+}

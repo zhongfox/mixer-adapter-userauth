@@ -1,0 +1,41 @@
+apiVersion: "config.istio.io/v1alpha2"
+kind: handler
+metadata:
+  name: userauth
+  namespace: istio-system
+spec:
+  adapter: userauth
+  connection:
+    #address: "[::]:8888"
+    address: "userauth.istio-system.svc.cluster.local:8888"
+  params:
+    token: "admintoken"
+---
+
+apiVersion: "config.istio.io/v1alpha2"
+kind: instance
+metadata:
+  name: userauth
+  namespace: istio-system
+spec:
+  template: authorization
+  params:
+    subject:
+      properties:
+        token: request.headers["x-custom-token"]
+        host: request.host
+---
+
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+  name: userauth
+  namespace: istio-system
+spec:
+  #match: request.host == "localhost"
+  match: match(request.host, "httpbin.*")
+  actions:
+  - handler: userauth
+    instances:
+    - userauth
+---

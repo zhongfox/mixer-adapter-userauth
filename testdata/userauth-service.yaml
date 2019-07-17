@@ -1,0 +1,43 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: userauth
+  name: userauth
+  namespace: istio-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: userauth
+  template:
+    metadata:
+      labels:
+        app: userauth
+      name: userauth
+    spec:
+      containers:
+      - image: zhongfox/istio-mixer-adapter-userauth:v1
+        imagePullPolicy: Always
+        name: userauth
+        ports:
+        - containerPort: 8888
+          name: grpc-userauth
+          protocol: TCP
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: userauth
+  name: userauth
+  namespace: istio-system
+spec:
+  ports:
+  - port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: userauth
+  type: ClusterIP
