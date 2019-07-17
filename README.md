@@ -42,7 +42,7 @@
     ```
     kubectl -nfoo apply -f testdata/demo-apps.yaml
     ```
-3.login to sleep pod, try to curl httpbin service 
+3. login to sleep pod, try to curl httpbin service
 
     login:
 
