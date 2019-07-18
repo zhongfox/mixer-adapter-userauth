@@ -1,0 +1,5 @@
+FROM alpine:3.7
+WORKDIR /
+RUN apk add --no-cache ca-certificates
+COPY ./userauth /usr/bin/
+CMD ["userauth", "8888"]
