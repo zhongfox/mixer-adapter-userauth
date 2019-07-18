@@ -19,6 +19,6 @@
 *.out
 
 # Compile file
-userauth
+userauth/userauth
 
 tmp/*
