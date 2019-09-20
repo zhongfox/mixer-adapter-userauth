@@ -26,7 +26,9 @@
     kubectl -n istio-system apply -f testdata/userauth-service.yaml
     ```
 
-6. 按照`https://venilnoronha.io/seamless-cloud-native-apps-with-grpc-web-and-istio` 搭建 grpc-web demo
+6. install grpc-web demo
+
+   see: <https://venilnoronha.io/seamless-cloud-native-apps-with-grpc-web-and-istio>
 
 7. install handler, instance and rule
 
@@ -35,8 +37,6 @@
     ```
 
 ## test
-
-
 
 1. Login as fox (cookie: user=fox)
 
