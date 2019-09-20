@@ -9,7 +9,7 @@ spec:
     #address: "[::]:8888"
     address: "userauth.istio-system.svc.cluster.local:8888"
   params:
-    token: "admintoken"
+    token: "user=fox"
 ---
 
 apiVersion: "config.istio.io/v1alpha2"
@@ -22,7 +22,7 @@ spec:
   params:
     subject:
       properties:
-        token: request.headers["x-custom-token"]
+        token: request.headers["cookie"]
         host: request.host
 ---
 
@@ -33,7 +33,7 @@ metadata:
   namespace: istio-system
 spec:
   #match: request.host == "localhost"
-  match: match(request.host, "httpbin.*")
+  match: match(destination.service.host, "server.*")
   actions:
   - handler: userauth
     instances:
