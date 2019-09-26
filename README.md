@@ -1,6 +1,6 @@
 # Istio Mixer Check Adapter Demo
 
-![image-20190920165024485](https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-09-20-085224.png)
+![image-20190926103333487](https://zhongfox-blogimage-1256048497.cos.ap-guangzhou.myqcloud.com/2019-09-26-023336.png)
 
 ## install
 
