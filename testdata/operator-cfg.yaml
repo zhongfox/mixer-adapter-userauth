@@ -7,9 +7,9 @@ spec:
   adapter: userauth
   connection:
     #address: "[::]:8888"
-    address: "userauth.istio-system.svc.cluster.local:8888"
+    address: "authadapter.istio-system.svc.cluster.local:8888"
   params:
-    token: "user=fox"
+    token: "authserver.istio-system.svc.cluster.local:9999"
 ---
 
 apiVersion: "config.istio.io/v1alpha2"

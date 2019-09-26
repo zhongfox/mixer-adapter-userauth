@@ -8,16 +8,18 @@ package userauth
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/metadata"
 	"net"
-	"time"
+	"userauth/rpc"
 
 	"google.golang.org/grpc"
+	"errors"
 
 	"istio.io/api/mixer/adapter/model/v1beta1"
 	policy "istio.io/api/policy/v1beta1"
-	"istio.io/istio/mixer/adapter/userauth/config"
 	"istio.io/istio/mixer/pkg/status"
 	"istio.io/istio/mixer/template/authorization"
+	"userauth/config"
 )
 
 type (
@@ -37,6 +39,27 @@ type (
 
 var _ authorization.HandleAuthorizationServiceServer = &AuthAdapter{}
 
+ func decodeValue (in interface{}) interface{} {
+	switch t := in.(type) {
+	case *policy.Value_StringValue:
+		return t.StringValue
+	case *policy.Value_Int64Value:
+		return t.Int64Value
+	case *policy.Value_DoubleValue:
+		return t.DoubleValue
+	default:
+		return fmt.Sprintf("%v", in)
+	}
+}
+
+func decodeValueMap (in map[string]*policy.Value) map[string]interface{} {
+	out := make(map[string]interface{}, len(in))
+	for k, v := range in {
+		out[k] = decodeValue(v.GetValue())
+	}
+	return out
+}
+
 // HandleAuthorization token validate
 func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.HandleAuthorizationRequest) (*v1beta1.CheckResult, error) {
 
@@ -47,52 +70,51 @@ func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.
 	if r.AdapterConfig != nil {
 		if err := cfg.Unmarshal(r.AdapterConfig.Value); err != nil {
 			fmt.Printf("error unmarshalling adapter config: %v", err)
-			return nil, err
+			return nil, err // TODO test
 		}
 	}
 
-	decodeValue := func(in interface{}) interface{} {
-		switch t := in.(type) {
-		case *policy.Value_StringValue:
-			return t.StringValue
-		case *policy.Value_Int64Value:
-			return t.Int64Value
-		case *policy.Value_DoubleValue:
-			return t.DoubleValue
-		default:
-			return fmt.Sprintf("%v", in)
-		}
+	addr := cfg.Token
+	if addr == "" {
+		err := errors.New("no auth address provided")
+		fmt.Println(err)
+		return nil, err
 	}
-
-	decodeValueMap := func(in map[string]*policy.Value) map[string]interface{} {
-		out := make(map[string]interface{}, len(in))
-		for k, v := range in {
-			out[k] = decodeValue(v.GetValue())
-		}
-		return out
-	}
-
-	fmt.Println(cfg.Token)
 
 	props := decodeValueMap(r.Instance.Subject.Properties)
-	fmt.Printf("%v\n", props)
+	fmt.Printf("checking with attrs: %v\n", props)
 
-	for k, v := range props {
-		fmt.Println("k:", k, "v:", v)
-		if (k == "token") && v == cfg.Token {
-			fmt.Println("success!!")
-			return &v1beta1.CheckResult{
-				Status:        status.OK,
-				ValidDuration: time.Second * 3,
-				ValidUseCount: 3,
-			}, nil
+	if t, ok := props["token"]; ok {
+		cookie := t.(string)
+		md := metadata.Pairs("cookie", cookie)
+		ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		defer conn.Close()
+		if err != nil {
+			fmt.Printf("can not connect: %v\n", err)
+
+			return &v1beta1.CheckResult{ Status: status.WithUnavailable("connect error") }, nil
+		}
+
+		client := rpc.NewSigClient(conn)
+		// var header, trailer metadata.MD
+		response, err := client.Verify(ctx, &rpc.VerifyReq{})
+		if err != nil {
+			return &v1beta1.CheckResult{ Status: status.WithUnavailable("verify error") }, nil
+		}
+
+		if response.ErrCode == "ok" {
+			// return &v1beta1.CheckResult{ Status: status.OK, ValidDuration: time.Second * 3, ValidUseCount: 3}, nil
+			return &v1beta1.CheckResult{ Status: status.OK}, nil
+		} else {
+			message := fmt.Sprintf("Unauthorized: %s", response.ErrMsg)
+			return &v1beta1.CheckResult{ Status: status.WithPermissionDenied(message)}, nil
 		}
 	}
 
 	fmt.Println("failure; header not provided")
-	return &v1beta1.CheckResult{
-		Status: status.WithPermissionDenied("Unauthorized..."),
-	}, nil
+	return &v1beta1.CheckResult{ Status: status.WithPermissionDenied("Unauthorized...") }, nil
 }
 
 // Addr returns the listening address of the server

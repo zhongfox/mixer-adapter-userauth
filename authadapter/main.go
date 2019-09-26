@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	userauth "istio.io/istio/mixer/adapter/userauth"
+	"userauth"
 )
 
 func main() {

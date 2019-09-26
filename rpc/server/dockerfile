@@ -1,0 +1,7 @@
+FROM alpine:3.7
+WORKDIR /
+RUN apk add --no-cache ca-certificates
+COPY ./authserver /usr/bin/
+CMD ["authserver", "8888"]
+
+# CGO_ENABLED=0 GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o authserver && docker build -t zhongfox/authserver:v1 . && docker push zhongfox/authserver:v1
