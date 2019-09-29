@@ -1,0 +1,21 @@
+syntax = "proto3";
+package ftl_mixadp;
+
+service Sig {
+    /* 验票
+       注意：需要Mixer把收到的请求的metadata放在这个验票请求里，票据都在metadata里。
+     */
+    rpc Verify (VerifyReq) returns (VerifyRsp);
+}
+
+message VerifyReq {
+    // 暂时没有任何内容
+}
+
+message VerifyRsp {
+    string err_code = 1;    // 错误码。“ok”表示成功，其他表示出错。
+                            // 下面列出的错误码：
+                            //    "sig_err": 票据验证不通过
+                            //    "no-sig": 没有发现有效票据
+    string err_msg = 2;     // 具体的错误信息。 成功时，其值为空字符串。
+}

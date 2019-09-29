@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc/metadata"
 	"net"
-	"userauth/rpc"
+	"userauth/ftl_mixadp"
 
 	"google.golang.org/grpc"
 	"errors"
@@ -97,9 +97,9 @@ func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.
 			return &v1beta1.CheckResult{ Status: status.WithUnavailable("connect error") }, nil
 		}
 
-		client := rpc.NewSigClient(conn)
+		client := ftl_mixadp.NewSigClient(conn)
 		// var header, trailer metadata.MD
-		response, err := client.Verify(ctx, &rpc.VerifyReq{})
+		response, err := client.Verify(ctx, &ftl_mixadp.VerifyReq{})
 		if err != nil {
 			return &v1beta1.CheckResult{ Status: status.WithUnavailable("verify error") }, nil
 		}
