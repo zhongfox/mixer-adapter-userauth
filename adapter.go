@@ -107,9 +107,11 @@ func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.
 		if response.ErrCode == "ok" {
 			// return &v1beta1.CheckResult{ Status: status.OK, ValidDuration: time.Second * 3, ValidUseCount: 3}, nil
 			return &v1beta1.CheckResult{ Status: status.OK}, nil
-		} else {
+		} else if response.ErrCode =="sig-err" {
 			message := fmt.Sprintf("Unauthorized: %s", response.ErrMsg)
 			return &v1beta1.CheckResult{ Status: status.WithPermissionDenied(message)}, nil
+		} else {
+			return &v1beta1.CheckResult{ Status: status.WithUnavailable(response.ErrMsg) }, nil
 		}
 	}
 
