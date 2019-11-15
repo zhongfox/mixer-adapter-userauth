@@ -9,13 +9,20 @@ service Sig {
 }
 
 message VerifyReq {
-    // 暂时没有任何内容
+    string src_wl_namespace = 1;    // 填写Istio里的source.workload.namespace
+    string src_wl_name = 2;         // 填写Istio里的source.workload.name
+    string dst_wl_namespace = 101;  // 填写Istio里的destination.workload.namespace
+    string dst_wl_name = 102;       // 填写Istio里的destination.workload.name
+    string dst_svc_namespace = 103; // 填写Istio里的destination.service.namespace
+    string dst_svc_name = 104;      // 填写Istio里的destination.service.name
+    string dst_path = 105;          // 填写Istio里的request.url_path
+    //Istio里可用的变量：https://istio.io/docs/reference/config/policy-and-telemetry/attribute-vocabulary/
 }
 
 message VerifyRsp {
     string err_code = 1;    // 错误码。“ok”表示成功，其他表示出错。
-                            // 下面列出的错误码：
-                            //    "sig_err": 票据验证不通过
-                            //    "no-sig": 没有发现有效票据
+    // 下面列出的错误码：
+    //    "sig_err": 票据验证不通过
+    //    "no-sig": 没有发现有效票据
     string err_msg = 2;     // 具体的错误信息。 成功时，其值为空字符串。
 }

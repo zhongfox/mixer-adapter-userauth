@@ -4,4 +4,4 @@ RUN apk add --no-cache ca-certificates
 COPY ./authadapter /usr/bin/
 CMD ["authadapter", "8888"]
 
-# CGO_ENABLED=0 GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o authadapter && docker build -t zhongfox/authadapter:v1 . && docker push zhongfox/authadapter:v1
+# CGO_ENABLED=0 GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o authadapter && docker build -t zhongfox/authadapter:v2 . && docker push zhongfox/authadapter:v2

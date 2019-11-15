@@ -24,6 +24,13 @@ spec:
       properties:
         token: request.headers["cookie"]
         host: request.host
+        source_workload_namespace: source.workload.namespace
+        source_workload_name: source.workload.name
+        destination_workload_namespace: destination.workload.namespace
+        destination_workload_name: destination.workload.name
+        destination_service_namespace: destination.service.namespace
+        destination_service_name: destination.service.name
+        request_url_path: request.url_path
 ---
 
 apiVersion: "config.istio.io/v1alpha2"

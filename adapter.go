@@ -60,6 +60,22 @@ func decodeValueMap (in map[string]*policy.Value) map[string]interface{} {
 	return out
 }
 
+func decodeValueToString(in map[string]*policy.Value, key string) string {
+	v, ok := in[key]
+	if !ok {
+		fmt.Printf("no key %s", key)
+		return ""
+	}
+
+	s := decodeValue(v.GetValue())
+	out, ok := s.(string)
+	if !ok {
+		fmt.Printf("key %s is not string", key)
+		return ""
+	}
+	return out
+}
+
 // HandleAuthorization token validate
 func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.HandleAuthorizationRequest) (*v1beta1.CheckResult, error) {
 
@@ -81,42 +97,47 @@ func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.
 		return nil, err
 	}
 
-	props := decodeValueMap(r.Instance.Subject.Properties)
-	fmt.Printf("checking with attrs: %v\n", props)
+	// props := decodeValueMap(r.Instance.Subject.Properties)
+	props := r.Instance.Subject.Properties
+	// fmt.Printf("checking with attrs: %v\n", props)
 
-	if t, ok := props["token"]; ok {
-		cookie := t.(string)
-		md := metadata.Pairs("cookie", cookie)
-		ctx := metadata.NewOutgoingContext(context.Background(), md)
+	var cookie = decodeValueToString(props, "token")
+	md := metadata.Pairs("cookie", cookie)
+	c := metadata.NewOutgoingContext(context.Background(), md)
 
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
-		defer conn.Close()
-		if err != nil {
-			fmt.Printf("can not connect: %v\n", err)
-
-			return &v1beta1.CheckResult{ Status: status.WithUnavailable("connect error") }, nil
-		}
-
-		client := ftl_mixadp.NewSigClient(conn)
-		// var header, trailer metadata.MD
-		response, err := client.Verify(ctx, &ftl_mixadp.VerifyReq{})
-		if err != nil {
-			return &v1beta1.CheckResult{ Status: status.WithUnavailable("verify error") }, nil
-		}
-
-		if response.ErrCode == "ok" {
-			// return &v1beta1.CheckResult{ Status: status.OK, ValidDuration: time.Second * 3, ValidUseCount: 3}, nil
-			return &v1beta1.CheckResult{ Status: status.OK}, nil
-		} else if response.ErrCode =="sig-err" {
-			message := fmt.Sprintf("Unauthorized: %s", response.ErrMsg)
-			return &v1beta1.CheckResult{ Status: status.WithPermissionDenied(message)}, nil
-		} else {
-			return &v1beta1.CheckResult{ Status: status.WithUnavailable(response.ErrMsg) }, nil
-		}
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	defer conn.Close()
+	if err != nil {
+		fmt.Printf("can not connect: %v\n", err)
+		return &v1beta1.CheckResult{ Status: status.WithUnavailable("connect error") }, nil
 	}
 
-	fmt.Println("failure; header not provided")
-	return &v1beta1.CheckResult{ Status: status.WithPermissionDenied("Unauthorized...") }, nil
+	client := ftl_mixadp.NewSigClient(conn)
+	// var header, trailer metadata.MD
+	reqData := &ftl_mixadp.VerifyReq {
+		SrcWlNamespace:  decodeValueToString(props, "source_workload_namespace"),
+		SrcWlName: decodeValueToString(props,"source_workload_name"),
+		DstWlNamespace: decodeValueToString(props, "destination_workload_namespace"),
+		DstWlName: decodeValueToString(props, "destination_workload_name"),
+		DstSvcNamespace: decodeValueToString(props, "destination_service_namespace"),
+		DstSvcName: decodeValueToString(props, "destination_service_name"),
+		DstPath: decodeValueToString(props, "request_url_path"),
+	}
+	response, err := client.Verify(c, reqData)
+	if err != nil {
+		return &v1beta1.CheckResult{ Status: status.WithUnavailable("verify error") }, nil
+	}
+
+	if response.ErrCode == "ok" {
+		// return &v1beta1.CheckResult{ Status: status.OK, ValidDuration: time.Second * 3, ValidUseCount: 3}, nil
+		return &v1beta1.CheckResult{ Status: status.OK}, nil
+	} else if response.ErrCode =="sig-err" {
+		message := fmt.Sprintf("Unauthorized: %s", response.ErrMsg)
+		return &v1beta1.CheckResult{ Status: status.WithPermissionDenied(message)}, nil
+	} else {
+		return &v1beta1.CheckResult{ Status: status.WithUnavailable(response.ErrMsg) }, nil
+	}
+
 }
 
 // Addr returns the listening address of the server
