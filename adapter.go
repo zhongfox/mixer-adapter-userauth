@@ -110,14 +110,15 @@ func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.
 	// props := decodeValueMap(r.Instance.Subject.Properties)
 	props := r.Instance.Subject.Properties
 	// fmt.Printf("checking with attrs: %v\n", props)
-	var authData []string
+	authData := []string{"method", decodeValueToString(props, "method")}
 
 	for _, k := range AuthKeys {
 		authData = append(authData, k)
 		authData = append(authData, decodeValueToString(props, k))
 	}
 
-	//var cookie = decodeValueToString(props, "token")
+	fmt.Println("debug auth:", authData)
+
 	//md := metadata.Pairs("cookie", cookie)
 	md := metadata.Pairs(authData...)
 	c := metadata.NewOutgoingContext(context.Background(), md)
