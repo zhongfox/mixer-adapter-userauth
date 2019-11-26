@@ -22,8 +22,13 @@ spec:
   params:
     subject:
       properties:
-        token: request.headers["cookie"]
-        host: request.host
+        cookie: request.headers["cookie"]
+        user_id: request.headers["user_id"]
+        language: request.headers["language"]
+        websig: request.headers["websig"]
+        tasksig: request.headers["tasksig"]
+        oa_uid: request.headers["oa_uid"]
+        oa_token: request.headers["oa_token"]
         source_workload_namespace: source.workload.namespace
         source_workload_name: source.workload.name
         destination_workload_namespace: destination.workload.namespace

@@ -37,6 +37,16 @@ type (
 	}
 )
 
+var AuthKeys = []string {
+	"cookie",
+	"user_id",
+	"language",
+	"websig",
+	"tasksig",
+	"oa_uid",
+	"oa_token",
+}
+
 var _ authorization.HandleAuthorizationServiceServer = &AuthAdapter{}
 
  func decodeValue (in interface{}) interface{} {
@@ -100,9 +110,16 @@ func (s *AuthAdapter) HandleAuthorization(ctx context.Context, r *authorization.
 	// props := decodeValueMap(r.Instance.Subject.Properties)
 	props := r.Instance.Subject.Properties
 	// fmt.Printf("checking with attrs: %v\n", props)
+	var authData []string
 
-	var cookie = decodeValueToString(props, "token")
-	md := metadata.Pairs("cookie", cookie)
+	for _, k := range AuthKeys {
+		authData = append(authData, k)
+		authData = append(authData, decodeValueToString(props, k))
+	}
+
+	//var cookie = decodeValueToString(props, "token")
+	//md := metadata.Pairs("cookie", cookie)
+	md := metadata.Pairs(authData...)
 	c := metadata.NewOutgoingContext(context.Background(), md)
 
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
